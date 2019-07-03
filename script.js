@@ -1,5 +1,6 @@
 const list = document.querySelector("ul");
 const form = document.querySelector("form");
+const btn = document.querySelector("button");
 
 const addRecipe = (recipe, id) => {
   let time = recipe.created_on.toDate();
@@ -14,18 +15,28 @@ const addRecipe = (recipe, id) => {
   list.innerHTML += html;
 };
 
-// get elements
-db.collection("Recipe")
-  .get()
-  .then(snapshot => {
-    snapshot.docs.forEach(doc => {
-      console.log(doc.data());
-      addRecipe(doc.data(), doc.id);
-    });
-  })
-  .catch(err => {
-    console.log(err);
+// deleting ui
+
+const deleteRecipe = id => {
+  const recipes = document.querySelectorAll("li");
+  recipes.forEach(recipe => {
+    if (recipe.getAttribute("data-id") === id) {
+      recipe.remove();
+    }
   });
+};
+
+// get elements
+const unsub = db.collection("Recipe").onSnapshot(snapshot => {
+  snapshot.docChanges().forEach(change => {
+    const doc = change.doc;
+    if (change.type === "added") {
+      addRecipe(doc.data(), doc.id);
+    } else if (change.type == "removed") {
+      deleteRecipe(doc.id);
+    }
+  });
+});
 
 // add Element
 form.addEventListener("submit", e => {
@@ -63,4 +74,11 @@ list.addEventListener("click", e => {
         console.log(err);
       });
   }
+});
+
+// unsubscribe from changes
+
+btn.addEventListener("click", () => {
+  unsub();
+  console.log(`Unsubscribe from changes`);
 });
